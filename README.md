@@ -11,4 +11,7 @@ make memcached
 
 # destroy memcached
 make teardown-memcached
+
+# run tests
+make test
 ```
