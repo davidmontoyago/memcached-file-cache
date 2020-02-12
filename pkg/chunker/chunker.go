@@ -20,9 +20,8 @@ type Chunked struct {
 	Parts    []*Chunk
 }
 
-// Split array of bytes into random sized chunks between 96 and 1024 bytes
-// a chunk of at least 96 bytes will ensure it fits onto any page of the first slab
-// chunks between and 96 and 1024 will be distributed across all slabs reducing contention on a single slab
+// Split array of bytes into random sized chunks between 96 and 1024 Kbytes
+// chunks between 96 and 1024Kbytes will be randomly distributed across all slabs preventing contention on a single slab
 func (c *Chunker) Split(file []byte) *Chunked {
 	log.Println("file size is", len(file), "bytes")
 	var parts []*Chunk

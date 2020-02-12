@@ -30,7 +30,7 @@ memcached:
 	make test-memcached
 
 test-memcached:
-	$(GOCMD) run ./memcached/main.go
+	$(GOCMD) run ./memcached/test.go
 
 teardown-memcached:
 	docker rm -f memcached
