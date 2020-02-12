@@ -12,13 +12,28 @@ type Chunker struct {
 
 // Chunk if a part of a file
 type Chunk struct {
-	Bytes []byte
+	bytes []byte
+}
+
+// Bytes returns a chunk's bytes
+func (c *Chunk) Bytes() []byte {
+	return c.bytes
 }
 
 // Chunked is a chunked file with a checksum for consistency verification
 type Chunked struct {
-	Checksum string
-	Parts    []*Chunk
+	checksum string
+	parts    []*Chunk
+}
+
+// Checksum returns a chunked file's checksum
+func (c *Chunked) Checksum() string {
+	return c.checksum
+}
+
+// Chunks returns a file chunks
+func (c *Chunked) Chunks() []*Chunk {
+	return c.parts
 }
 
 // Split array of bytes into random sized chunks between 96 and 1024 Kbytes
@@ -37,25 +52,23 @@ func (c *Chunker) Split(file []byte) *Chunked {
 
 	checksum := md5.Sum(file)
 	return &Chunked{
-		Checksum: fmt.Sprintf("%x", checksum),
-		Parts:    parts,
+		checksum: fmt.Sprintf("%x", checksum),
+		parts:    parts,
 	}
 }
 
 // Assemble re-assembles a file from its chunks
 func (c *Chunker) Assemble(chunkedFile *Chunked) []byte {
 	var file []byte
-	for _, chunk := range chunkedFile.Parts {
-		file = append(file, chunk.Bytes...)
+	for _, chunk := range chunkedFile.Chunks() {
+		file = append(file, chunk.Bytes()...)
 	}
 	return file
 }
 
 func newChunk(file []byte, offset, chunkSize int) *Chunk {
 	chunk := file[offset : offset+chunkSize]
-	return &Chunk{
-		Bytes: chunk,
-	}
+	return &Chunk{bytes: chunk}
 }
 
 func nextChunkSize(fileSize, offset int, sizer *chunkSizer) int {

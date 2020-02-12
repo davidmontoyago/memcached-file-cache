@@ -25,19 +25,19 @@ func TestSplitsFileIntoRandomSizedChunks(t *testing.T) {
 	}
 	chunkedFile := chunker.Split(file)
 
-	totalParts := len(chunkedFile.Parts)
+	totalParts := len(chunkedFile.Chunks())
 	if totalParts < 10 {
 		t.Errorf("got %d parts but expected at least 10 parts", totalParts)
 	}
 	var chunksSizeSum int
-	for _, chunk := range chunkedFile.Parts {
-		chunksSizeSum += len(chunk.Bytes)
+	for _, chunk := range chunkedFile.Chunks() {
+		chunksSizeSum += len(chunk.Bytes())
 	}
 	if chunksSizeSum != expectedFileSize {
 		t.Errorf("got %d from adding up chunks but expected %d", chunksSizeSum, expectedFileSize)
 	}
-	if chunkedFile.Checksum != expectedChecksum {
-		t.Errorf("got checksum %s but expected %s", chunkedFile.Checksum, expectedChecksum)
+	if chunkedFile.Checksum() != expectedChecksum {
+		t.Errorf("got checksum %s but expected %s", chunkedFile.Checksum(), expectedChecksum)
 	}
 }
 
@@ -60,7 +60,7 @@ func TestAssemblesFileFromChunks(t *testing.T) {
 		t.Errorf("expected assembled file to contain same bytes as fixture but they differ")
 	}
 	checksum := fmt.Sprintf("%x", md5.Sum(assembledFile))
-	if chunkedFile.Checksum != expectedChecksum {
+	if chunkedFile.Checksum() != expectedChecksum {
 		t.Errorf("got checksum %s but expected %s", checksum, expectedChecksum)
 	}
 }
