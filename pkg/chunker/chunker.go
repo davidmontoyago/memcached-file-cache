@@ -1,7 +1,8 @@
 package chunker
 
 import (
-	"crypto/sha256"
+	"crypto/md5"
+	"fmt"
 	"log"
 )
 
@@ -16,7 +17,7 @@ type Chunk struct {
 
 // Chunked is a chunked file with a checksum for consistency verification
 type Chunked struct {
-	Checksum [sha256.Size]byte
+	Checksum string
 	Parts    []*Chunk
 }
 
@@ -33,7 +34,21 @@ func (c *Chunker) Split(file []byte) *Chunked {
 		parts = append(parts, newChunk(file, offset, chunkSize))
 		offset += chunkSize
 	}
-	return &Chunked{Parts: parts}
+
+	checksum := md5.Sum(file)
+	return &Chunked{
+		Checksum: fmt.Sprintf("%x", checksum),
+		Parts:    parts,
+	}
+}
+
+// Assemble re-assembles a file from its chunks
+func (c *Chunker) Assemble(chunkedFile *Chunked) []byte {
+	var file []byte
+	for _, chunk := range chunkedFile.Parts {
+		file = append(file, chunk.Bytes...)
+	}
+	return file
 }
 
 func newChunk(file []byte, offset, chunkSize int) *Chunk {
@@ -51,13 +66,4 @@ func nextChunkSize(fileSize, offset int, sizer *chunkSizer) int {
 	}
 	log.Println("next chunk size is", chunkSize)
 	return chunkSize
-}
-
-// Assemble re-assembles a file from its chunks
-func (c *Chunker) Assemble(chunkedFile *Chunked) []byte {
-	var file []byte
-	for _, chunk := range chunkedFile.Parts {
-		file = append(file, chunk.Bytes...)
-	}
-	return file
 }
