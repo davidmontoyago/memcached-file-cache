@@ -29,23 +29,28 @@ func (c *Chunker) Split(file []byte) *Chunked {
 	chunkSizer := newChunkSizer()
 	var offset int
 	for offset < len(file) {
-		bytesLeft := len(file) - offset
-		chunkSize := chunkSizer.new()
-		if chunkSize > bytesLeft {
-			chunkSize = bytesLeft
-		}
-		log.Println("next chunk size is", chunkSize)
-
-		chunk := file[offset : offset+chunkSize]
-		parts = append(parts, &Chunk{
-			Bytes: chunk,
-		})
+		chunkSize := nextChunkSize(len(file), offset, chunkSizer)
+		parts = append(parts, newChunk(file, offset, chunkSize))
 		offset += chunkSize
 	}
+	return &Chunked{Parts: parts}
+}
 
-	return &Chunked{
-		Parts: parts,
+func newChunk(file []byte, offset, chunkSize int) *Chunk {
+	chunk := file[offset : offset+chunkSize]
+	return &Chunk{
+		Bytes: chunk,
 	}
+}
+
+func nextChunkSize(fileSize, offset int, sizer *chunkSizer) int {
+	bytesLeft := fileSize - offset
+	chunkSize := sizer.new()
+	if chunkSize > bytesLeft {
+		chunkSize = bytesLeft
+	}
+	log.Println("next chunk size is", chunkSize)
+	return chunkSize
 }
 
 // Assemble re-assembles a file from its chunks
