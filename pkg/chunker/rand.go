@@ -9,7 +9,7 @@ import (
 const minChunkSize = 96
 
 // maxChunkSize is the max chunk size
-const maxChunkSize = 1024
+const maxChunkSize = 1048576
 
 // chunkSizer generates random chunk sizes between minChunkSize and maxChunkSize
 type chunkSizer struct {

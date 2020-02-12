@@ -15,3 +15,7 @@ make teardown-memcached
 # run tests
 make test
 ```
+
+
+# TODO 
+- Make chunkSizer an interface to swap strategies for chunk sizing
