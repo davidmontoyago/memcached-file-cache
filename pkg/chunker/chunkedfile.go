@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// ChunkedFile is a chunked file with a checksum for consistency verification
+// ChunkedFile represents a file that can be broken into randomly sized chunks or assembled from chunks
 type ChunkedFile struct {
 	file     []byte
 	checksum string
@@ -17,17 +17,13 @@ func NewFromFile(file []byte) *ChunkedFile {
 	return &ChunkedFile{file: file}
 }
 
-// NewFromChunks creates a chunked files from its parts
-func NewFromChunks(checksum string, parts []*Chunk) *ChunkedFile {
-	return &ChunkedFile{checksum: checksum, parts: parts}
+// NewFromChunks creates a chunked file from its parts
+func NewFromChunks(parts []*Chunk) *ChunkedFile {
+	chunkedFile := NewFromFile(assemble(parts))
+	return chunkedFile
 }
 
-// Checksum returns a chunked file's checksum
-func (c *ChunkedFile) Checksum() string {
-	return c.checksum
-}
-
-// Chunks returns a file chunks
+// Chunks returns a file's chunks - lazy
 func (c *ChunkedFile) Chunks() []*Chunk {
 	if len(c.parts) == 0 {
 		c.split()
@@ -35,22 +31,34 @@ func (c *ChunkedFile) Chunks() []*Chunk {
 	return c.parts
 }
 
-// Assemble re-assembles a file from its chunks
-func (c *ChunkedFile) Assemble() []byte {
-	c.file = nil
-	for _, chunk := range c.Chunks() {
-		c.file = append(c.file, chunk.Bytes()...)
-	}
+// File returns as file
+func (c *ChunkedFile) File() []byte {
 	return c.file
 }
 
-// Validate ensures a chunked file checksum matches its assembled parts
-func (c *ChunkedFile) Validate() error {
-	fileChecksum := fmt.Sprintf("%x", md5.Sum(c.file))
-	if fileChecksum != c.Checksum() {
-		return fmt.Errorf("chunked file checksum %s does not match its content: %s", c.Checksum(), fileChecksum)
+// Validate the file's content checksum against a given checksum
+func (c *ChunkedFile) Validate(checksum string) error {
+	if checksum != c.Checksum() {
+		return fmt.Errorf("content checksum %s does not match %s", c.Checksum(), checksum)
 	}
 	return nil
+}
+
+// Checksum returns a chunked file's checksum
+func (c *ChunkedFile) Checksum() string {
+	if c.checksum == "" {
+		c.checksum = fmt.Sprintf("%x", md5.Sum(c.file))
+	}
+	return c.checksum
+}
+
+// re-assembles a file from its chunks
+func assemble(chunks []*Chunk) []byte {
+	var file []byte
+	for _, chunk := range chunks {
+		file = append(file, chunk.Bytes()...)
+	}
+	return file
 }
 
 // Split array of bytes into random sized chunks between 96 and 1024 Kbytes

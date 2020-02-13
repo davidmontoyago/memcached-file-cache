@@ -33,7 +33,7 @@ func TestSplitsFileIntoRandomSizedChunks(t *testing.T) {
 	if chunksSizeSum != expectedFileSize {
 		t.Errorf("got %d from adding up chunks but expected %d", chunksSizeSum, expectedFileSize)
 	}
-	if chunkedFile.Checksum() != expectedChecksum {
+	if err := chunkedFile.Validate(expectedChecksum); err != nil {
 		t.Errorf("got checksum %s but expected %s", chunkedFile.Checksum(), expectedChecksum)
 	}
 }
@@ -50,12 +50,12 @@ func TestAssemblesFileFromChunks(t *testing.T) {
 	chunkedFile := NewFromFile(file)
 	chunks := chunkedFile.Chunks()
 
-	testChunkedFile := NewFromChunks("91388263e7c545ebea3952fb2637dffa", chunks)
-	assembledFile := testChunkedFile.Assemble()
+	testChunkedFile := NewFromChunks(chunks)
+	assembledFile := testChunkedFile.File()
 	if !bytes.Equal(file, assembledFile) {
 		t.Errorf("expected assembled file to contain same bytes as fixture but they differ")
 	}
-	if err := testChunkedFile.Validate(); err != nil {
+	if err := testChunkedFile.Validate("91388263e7c545ebea3952fb2637dffa"); err != nil {
 		t.Error(err)
 	}
 }
