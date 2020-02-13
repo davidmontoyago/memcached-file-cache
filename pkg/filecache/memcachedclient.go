@@ -6,4 +6,6 @@ type memcachedClient interface {
 	Set(item *memcache.Item) error
 
 	Get(key string) (item *memcache.Item, err error)
+
+	Delete(key string) error
 }

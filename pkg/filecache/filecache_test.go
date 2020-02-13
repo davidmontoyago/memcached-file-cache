@@ -28,6 +28,10 @@ func (c *mockMemcachedClient) Get(key string) (item *memcache.Item, err error) {
 	return &memcache.Item{Value: val}, nil
 }
 
+func (c *mockMemcachedClient) Delete(key string) error {
+	return nil
+}
+
 func TestPutStoresFileKeyWithChunksKeysAsValue(t *testing.T) {
 	expectedFileKey := "91388263e7c545ebea3952fb2637dffa"
 	memcached := &mockMemcachedClient{storedItems: make(map[string][]byte)}
