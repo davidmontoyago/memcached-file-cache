@@ -13,15 +13,15 @@ type FileCache struct {
 	memcache memcachedClient
 }
 
-// NewFileCache initializes a FileCache with a memcache client
-func NewFileCache(memcache memcachedClient) *FileCache {
+// New initializes a FileCache with a memcache client
+func New(memcache memcachedClient) *FileCache {
 	return &FileCache{
 		memcache: memcache,
 	}
 }
 
 // Put splits and places a file in the cache
-func (f *FileCache) Put(file []byte) error {
+func (f *FileCache) Put(file []byte) (string, error) {
 	chunkedFile := chunker.NewFromFile(file)
 	totalChunks := len(chunkedFile.Chunks())
 
@@ -36,13 +36,13 @@ func (f *FileCache) Put(file []byte) error {
 	keys := strings.TrimSuffix(sb.String(), ",")
 
 	if err := f.putFileKeys(chunkedFile.Checksum(), keys); err != nil {
-		return err
+		return "", err
 	}
 	if err := f.putFileChunks(fileChunksByKey); err != nil {
 		// TODO remove file keys
-		return err
+		return "", err
 	}
-	return nil
+	return chunkedFile.Checksum(), nil
 }
 
 // Get fetches all file parts and returns the assembled file
