@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
@@ -24,7 +26,10 @@ func (c *mockMemcachedClient) Set(item *memcache.Item) error {
 
 func (c *mockMemcachedClient) Get(key string) (item *memcache.Item, err error) {
 	c.getTimesCalled++
-	val, _ := c.storedItems[key]
+	val, ok := c.storedItems[key]
+	if !ok {
+		return nil, errors.New("cache miss")
+	}
 	return &memcache.Item{Value: val}, nil
 }
 
@@ -46,7 +51,9 @@ func TestPutStoresFileKeyWithChunksKeysAsValue(t *testing.T) {
 		t.Error(err)
 	}
 	key, err := fileCache.Put(file)
-
+	if err != nil {
+		t.Error(err)
+	}
 	if key != expectedFileKey {
 		t.Errorf("got file key %s but expected %s", key, expectedFileKey)
 	}
@@ -129,7 +136,7 @@ func TestGetCanHandleAnEmptyFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	if memcached.getTimesCalled > 1 {
-		t.Errorf("expected memcached Get to be called once but was called %d times", memcached.getTimesCalled)
+	if memcached.getTimesCalled > 2 {
+		t.Errorf("expected memcached Get to be called twice but was called %d times", memcached.getTimesCalled)
 	}
 }

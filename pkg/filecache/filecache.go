@@ -33,6 +33,10 @@ func (f *FileCache) Put(file []byte) (string, error) {
 
 	chunkedFile := chunker.NewFromFile(file)
 
+	if f.exists(chunkedFile.Checksum()) {
+		return chunkedFile.Checksum(), nil
+	}
+
 	chunksByKey, keys := getChunksByKey(chunkedFile)
 
 	if err := f.putFileKeys(chunkedFile.Checksum(), keys); err != nil {
@@ -136,4 +140,12 @@ func checkFileSize(file []byte) error {
 		return fmt.Errorf("file size %d exceeds the max allowed %d by %d bytes", fileSize, MaxFileSize, fileSize-MaxFileSize)
 	}
 	return nil
+}
+
+func (f *FileCache) exists(checksum string) bool {
+	item, err := f.memcache.Get(checksum)
+	if err != nil {
+		return false
+	}
+	return item != nil
 }
