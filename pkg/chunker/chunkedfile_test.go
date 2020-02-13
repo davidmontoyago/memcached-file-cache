@@ -2,15 +2,12 @@ package chunker
 
 import (
 	"bytes"
-	"crypto/md5"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestSplitsFileIntoRandomSizedChunks(t *testing.T) {
-	chunker := &Chunker{}
 	f, err := os.Open("fixture/file.dat")
 	if err != nil {
 		t.Error(err)
@@ -23,7 +20,7 @@ func TestSplitsFileIntoRandomSizedChunks(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	chunkedFile := chunker.Split(file)
+	chunkedFile := NewFromFile(file)
 
 	totalParts := len(chunkedFile.Chunks())
 	if totalParts < 10 {
@@ -42,7 +39,6 @@ func TestSplitsFileIntoRandomSizedChunks(t *testing.T) {
 }
 
 func TestAssemblesFileFromChunks(t *testing.T) {
-	chunker := &Chunker{}
 	f, err := os.Open("fixture/file.dat")
 	if err != nil {
 		t.Error(err)
@@ -51,16 +47,15 @@ func TestAssemblesFileFromChunks(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	expectedChecksum := "91388263e7c545ebea3952fb2637dffa"
+	chunkedFile := NewFromFile(file)
+	chunks := chunkedFile.Chunks()
 
-	chunkedFile := chunker.Split(file)
-
-	assembledFile := chunker.Assemble(chunkedFile)
+	testChunkedFile := NewFromChunks("91388263e7c545ebea3952fb2637dffa", chunks)
+	assembledFile := testChunkedFile.Assemble()
 	if !bytes.Equal(file, assembledFile) {
 		t.Errorf("expected assembled file to contain same bytes as fixture but they differ")
 	}
-	checksum := fmt.Sprintf("%x", md5.Sum(assembledFile))
-	if chunkedFile.Checksum() != expectedChecksum {
-		t.Errorf("got checksum %s but expected %s", checksum, expectedChecksum)
+	if err := testChunkedFile.Validate(); err != nil {
+		t.Error(err)
 	}
 }
