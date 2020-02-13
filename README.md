@@ -16,17 +16,20 @@ make memcached
 # run tests
 make test
 
-# put a file
+# put a file via CLI
 go run cmd/main.go put -f path-to-file
 
-# get a file
+# get a file via CLI
 go run cmd/main.go get -k file-key
 
+# run API server
+go run main.go
+
 # PUT a file
-curl -vvv -XPUT http://localhost:8080/filecache --upload-file ./pkg/chunker/fixture/file.dat
+curl -vvv -XPUT http://localhost:8080/filecache --upload-file ./file.dat
 
 # GET a file
-curl -vvv http://localhost:8080/filecache/91388263e7c545ebea3952fb2637dffa
+curl -vvv http://localhost:8080/filecache/91388263e7c545ebea3952fb2637dffa --output file.dat
 
 # destroy memcached
 make teardown-memcached
