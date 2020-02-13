@@ -77,6 +77,5 @@ func nextChunkSize(fileSize, offset int, sizer *chunkSizer) int {
 	if chunkSize > bytesLeft {
 		chunkSize = bytesLeft
 	}
-	log.Println("next chunk size is", chunkSize)
 	return chunkSize
 }

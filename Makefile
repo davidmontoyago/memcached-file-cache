@@ -17,7 +17,7 @@ build:
 	$(GOBUILD) ./
 
 test:
-	$(GOTEST) ./pkg/chunker -v
+	$(GOTEST) ./pkg/... -v
 
 clean:
 	$(GOCLEAN)
