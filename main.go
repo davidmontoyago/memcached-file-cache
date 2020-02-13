@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -47,6 +48,8 @@ func upload(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	json.NewEncoder(res).Encode(map[string]string{"ok": "true", "key": key})
 	log.Printf("success! uploaded file %s\n", key)
 }
 
