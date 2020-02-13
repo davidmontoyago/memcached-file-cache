@@ -59,3 +59,20 @@ func TestAssemblesFileFromChunks(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestHandlesAnEmptyFile(t *testing.T) {
+	f, err := os.Open("fixture/empty.dat")
+	if err != nil {
+		t.Error(err)
+	}
+	file, err := ioutil.ReadAll(f)
+	if err != nil {
+		t.Error(err)
+	}
+	chunkedFile := NewFromFile(file)
+	chunks := chunkedFile.Chunks()
+
+	if len(chunks) > 0 {
+		t.Errorf("expected file to have no chunks but has %d", len(chunks))
+	}
+}

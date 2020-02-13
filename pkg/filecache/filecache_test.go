@@ -13,7 +13,8 @@ import (
 )
 
 type mockMemcachedClient struct {
-	storedItems map[string][]byte
+	storedItems    map[string][]byte
+	getTimesCalled int
 }
 
 func (c *mockMemcachedClient) Set(item *memcache.Item) error {
@@ -22,6 +23,7 @@ func (c *mockMemcachedClient) Set(item *memcache.Item) error {
 }
 
 func (c *mockMemcachedClient) Get(key string) (item *memcache.Item, err error) {
+	c.getTimesCalled++
 	val, _ := c.storedItems[key]
 	return &memcache.Item{Value: val}, nil
 }
@@ -98,5 +100,32 @@ func TestPutRejectsFilesGreaterThan50MB(t *testing.T) {
 	_, err := fileCache.Put(bigFile)
 	if err == nil {
 		t.Error("expected error but got nil")
+	}
+}
+
+func TestGetCanHandleAnEmptyFile(t *testing.T) {
+	memcached := &mockMemcachedClient{storedItems: make(map[string][]byte)}
+	fileCache := New(memcached)
+
+	f, err := os.Open("../chunker/fixture/empty.dat")
+	if err != nil {
+		t.Error(err)
+	}
+	file, err := ioutil.ReadAll(f)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = fileCache.Put(file)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = fileCache.Get("d41d8cd98f00b204e9800998ecf8427e")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if memcached.getTimesCalled > 1 {
+		t.Errorf("expected memcached Get to be called once but was called %d times", memcached.getTimesCalled)
 	}
 }
