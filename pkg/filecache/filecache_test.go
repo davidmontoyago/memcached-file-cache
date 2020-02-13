@@ -26,8 +26,9 @@ func (c *mockMemcachedClient) Get(key string) (item *memcache.Item, err error) {
 }
 
 func TestPutStoresFileKeyWithChunksKeysAsValue(t *testing.T) {
+	expectedFileKey := "91388263e7c545ebea3952fb2637dffa"
 	memcached := &mockMemcachedClient{storedItems: make(map[string][]byte)}
-	fileCache := NewFileCache(memcached)
+	fileCache := New(memcached)
 
 	f, err := os.Open("../chunker/fixture/file.dat")
 	if err != nil {
@@ -37,20 +38,23 @@ func TestPutStoresFileKeyWithChunksKeysAsValue(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fileCache.Put(file)
+	key, err := fileCache.Put(file)
 
-	fileKey := "91388263e7c545ebea3952fb2637dffa"
+	if key != expectedFileKey {
+		t.Errorf("got file key %s but expected %s", key, expectedFileKey)
+	}
+
 	var val []byte
 	var ok bool
-	if val, ok = memcached.storedItems[fileKey]; !ok {
-		t.Errorf("expected file with key %s to be stored but found none", fileKey)
+	if val, ok = memcached.storedItems[expectedFileKey]; !ok {
+		t.Errorf("expected file with key %s to be stored but found none", expectedFileKey)
 	}
 	chunksKeys := string(val)
 	for count, chunkKey := range strings.Split(chunksKeys, ",") {
 		if val, ok = memcached.storedItems[chunkKey]; !ok {
 			t.Errorf("expected file chunk key %s to be stored but found none", chunkKey)
 		}
-		expectedKey := fmt.Sprintf("%s-part-%d-of-%d", fileKey, count, len(memcached.storedItems)-1)
+		expectedKey := fmt.Sprintf("%s-part-%d-of-%d", expectedFileKey, count, len(memcached.storedItems)-1)
 		if chunkKey != expectedKey {
 			t.Errorf("expected file chunk key to be %s but got %s", expectedKey, chunkKey)
 		}
@@ -59,7 +63,7 @@ func TestPutStoresFileKeyWithChunksKeysAsValue(t *testing.T) {
 
 func TestGetFetchesChunksAndAssemblesFile(t *testing.T) {
 	memcached := &mockMemcachedClient{storedItems: make(map[string][]byte)}
-	fileCache := NewFileCache(memcached)
+	fileCache := New(memcached)
 
 	f, err := os.Open("../chunker/fixture/file.dat")
 	if err != nil {

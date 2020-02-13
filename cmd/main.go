@@ -1,11 +1,17 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"io/ioutil"
 	"os"
+
+	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/davidmontoyago/interview-davidmontoyago-d660952eff664d8bac96c9124d7f8582/pkg/filecache"
 
 	"github.com/urfave/cli/v2"
 )
+
+const memcachedAddr = "localhost:11211"
 
 func main() {
 	app := cli.NewApp()
@@ -20,10 +26,7 @@ func main() {
 					Required: true,
 				},
 			},
-			Action: func(c *cli.Context) error {
-				log.Println("putting file", c.String("filepath"))
-				return nil
-			},
+			Action: upload,
 		},
 		{
 			Name:  "get",
@@ -35,11 +38,61 @@ func main() {
 					Required: true,
 				},
 			},
-			Action: func(c *cli.Context) error {
-				log.Println("getting file", c.String("key"))
-				return nil
-			},
+			Action: download,
 		},
 	}
 	app.Run(os.Args)
+}
+
+func upload(c *cli.Context) error {
+	filepath := c.String("filepath")
+	fmt.Printf("uploading file %s...\n", filepath)
+	file, err := readFile(filepath)
+	if err != nil {
+		return err
+	}
+
+	mc := memcache.New(memcachedAddr)
+	fc := filecache.New(mc)
+
+	key, err := fc.Put(file)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("success! file key is %s\n", key)
+	return nil
+}
+
+func download(c *cli.Context) error {
+	fileKey := c.String("key")
+	fmt.Printf("downloading file %s...\n", fileKey)
+
+	mc := memcache.New(memcachedAddr)
+	fc := filecache.New(mc)
+
+	file, err := fc.Get(fileKey)
+	if err != nil {
+		return err
+	}
+
+	localFileName := fmt.Sprintf("./%s.dat", fileKey)
+	err = ioutil.WriteFile(localFileName, file, 0644)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("success! file saved to %s", localFileName)
+	return nil
+}
+
+func readFile(filepath string) ([]byte, error) {
+	f, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	file, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
 }
