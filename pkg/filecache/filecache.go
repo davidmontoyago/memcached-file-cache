@@ -23,7 +23,7 @@ func NewFileCache(memcache memcachedClient) *FileCache {
 }
 
 // Put splits and places a file in the cache
-func (f *FileCache) Put(file []byte) {
+func (f *FileCache) Put(file []byte) error {
 	chunkedFile := f.chunker.Split(file)
 	totalChunks := len(chunkedFile.Chunks())
 
@@ -39,11 +39,37 @@ func (f *FileCache) Put(file []byte) {
 
 	// store file unique id and comma separated list of all its chunks' ids
 	fileKeys := &memcache.Item{Key: chunkedFile.Checksum(), Value: []byte(keys)}
-	f.memcache.Set(fileKeys)
+	if err := f.memcache.Set(fileKeys); err != nil {
+		return err
+	}
 
 	// store file chunks
 	for key, chunk := range fileChunksByKey {
 		chunkItem := &memcache.Item{Key: key, Value: chunk.Bytes()}
-		f.memcache.Set(chunkItem)
+		if err := f.memcache.Set(chunkItem); err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+// Get fetches all file parts and returns the assembled file
+func (f *FileCache) Get(key string) ([]byte, error) {
+	fileKeys, err := f.memcache.Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	var parts []*chunker.Chunk
+	chunksKeys := string(fileKeys.Value)
+	for _, chunkKey := range strings.Split(chunksKeys, ",") {
+		fileChunk, err := f.memcache.Get(chunkKey)
+		if err != nil {
+			return nil, err
+		}
+		parts = append(parts, chunker.NewChunk(fileChunk.Value))
+	}
+
+	chunkedFile := chunker.NewChunkedFile(key, parts)
+	return f.chunker.Assemble(chunkedFile), nil
 }
