@@ -39,14 +39,15 @@ func (f *FileCache) Put(file []byte) error {
 		return err
 	}
 	if err := f.putFileChunks(fileChunksByKey); err != nil {
+		// TODO remove file keys
 		return err
 	}
 	return nil
 }
 
 // Get fetches all file parts and returns the assembled file
-func (f *FileCache) Get(key string) ([]byte, error) {
-	fileKeys, err := f.memcache.Get(key)
+func (f *FileCache) Get(checksum string) ([]byte, error) {
+	fileKeys, err := f.memcache.Get(checksum)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +62,11 @@ func (f *FileCache) Get(key string) ([]byte, error) {
 		parts = append(parts, chunker.NewChunk(fileChunk.Value))
 	}
 
-	chunkedFile := chunker.NewFromChunks(key, parts)
-	return chunkedFile.Assemble(), nil
+	chunkedFile := chunker.NewFromChunks(parts)
+	if err := chunkedFile.Validate(checksum); err != nil {
+		return nil, err
+	}
+	return chunkedFile.File(), nil
 }
 
 // store file unique id and comma separated list of all its chunks' ids
