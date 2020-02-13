@@ -69,12 +69,14 @@ func (f *FileCache) Get(checksum string) ([]byte, error) {
 
 	var parts []*chunker.Chunk
 	chunksKeys := string(fileKeys.Value)
-	for _, chunkKey := range strings.Split(chunksKeys, ",") {
-		fileChunk, err := f.memcache.Get(chunkKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get file chunk")
+	if chunksKeys != "" {
+		for _, chunkKey := range strings.Split(chunksKeys, ",") {
+			fileChunk, err := f.memcache.Get(chunkKey)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get file chunk")
+			}
+			parts = append(parts, chunker.NewChunk(fileChunk.Value))
 		}
-		parts = append(parts, chunker.NewChunk(fileChunk.Value))
 	}
 
 	chunkedFile := chunker.NewFromChunks(parts)
