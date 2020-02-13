@@ -30,7 +30,7 @@ go run cmd/main.go get -k file-key
 go run main.go
 
 # PUT a file via API
-curl -vvv -XPUT http://localhost:8080/filecache --upload-file ./file.dat
+curl -vvv -XPOST http://localhost:8080/filecache --upload-file ./file.dat
 
 # GET a file via API
 curl -vvv http://localhost:8080/filecache/91388263e7c545ebea3952fb2637dffa --output file.dat
