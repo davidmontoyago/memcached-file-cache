@@ -66,7 +66,7 @@ func assemble(chunks []*Chunk) []byte {
 func (c *ChunkedFile) split() {
 	var parts []*Chunk
 
-	chunkSizer := newChunkSizer()
+	chunkSizer := newUniformChunkSizer()
 	var offset int
 	for offset < len(c.file) {
 		chunkSize := nextChunkSize(len(c.file), offset, chunkSizer)
@@ -84,9 +84,9 @@ func newChunk(file []byte, offset, chunkSize int) *Chunk {
 	return &Chunk{bytes: chunk}
 }
 
-func nextChunkSize(fileSize, offset int, sizer *chunkSizer) int {
+func nextChunkSize(fileSize, offset int, sizer ChunkSizer) int {
 	bytesLeft := fileSize - offset
-	chunkSize := sizer.new()
+	chunkSize := sizer.NextChunkSize()
 	if chunkSize > bytesLeft {
 		chunkSize = bytesLeft
 	}

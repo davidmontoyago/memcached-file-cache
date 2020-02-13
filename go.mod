@@ -7,4 +7,6 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.1.1
+	golang.org/x/exp v0.0.0-20200213203834-85f925bdd4d0
+	gonum.org/v1/gonum v0.6.2
 )
