@@ -1,8 +1,9 @@
 # FileCache
 
-Uses a `ChunkedFile` to split a file into randomly sized chunks between 96 bytes and 1024 Kbytes to prevent contention on a single memcached slab.
+Uses a `ChunkedFile` to split a file into sized chunks between 96 bytes and 1024 Kbytes to prevent contention on a single memcached slab. The chunks sizing depends on the strategy passed as an implementation of `pkg/chunker.ChunkSizer`.
 
-`pkg/chunker/rand.chunkSizer` could be extended with other strategies other than random sizing for determining a chunk size.
+`pkg/chunker.ChunkSizer` allows using different strategies for determining a chunk size. Currently a random and the uniform distribution are implemented with the uniform as the default one in use.
+Given that in memcached the last slab (>512 Kbytes) contains the majority of the distribution values between 96 bytes and 1024 Kbytes, it tends to contain an overallocation of values. A more elaborate `ChunkSizer` implementation could take this into consideration but it would come at the expense of more file fragmentation.
 
 Uses an MD5 hash of the file's content as a file identifier and for later content verification. With a LOT of data this could cause collisions. A potential enhancement could be to use a hashing function more suited for uniqueness.
 
@@ -19,6 +20,9 @@ make test
 
 # setup memcached
 make memcached
+
+# optional - check slab allocation
+watch docker run --rm --network=host koudaiii/memcached-tool localhost:11211 display
 
 # put a file via CLI
 go run cmd/main.go put -f path-to-file
