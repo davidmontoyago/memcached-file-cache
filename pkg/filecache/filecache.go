@@ -10,21 +10,19 @@ import (
 
 // FileCache interfaces with cache client and chunker apis for spliting and storing/fetching files
 type FileCache struct {
-	chunker  *chunker.Chunker
 	memcache memcachedClient
 }
 
 // NewFileCache initializes a FileCache with a memcache client
 func NewFileCache(memcache memcachedClient) *FileCache {
 	return &FileCache{
-		chunker:  &chunker.Chunker{},
 		memcache: memcache,
 	}
 }
 
 // Put splits and places a file in the cache
 func (f *FileCache) Put(file []byte) error {
-	chunkedFile := f.chunker.Split(file)
+	chunkedFile := chunker.NewFromFile(file)
 	totalChunks := len(chunkedFile.Chunks())
 
 	var sb strings.Builder
@@ -70,6 +68,6 @@ func (f *FileCache) Get(key string) ([]byte, error) {
 		parts = append(parts, chunker.NewChunk(fileChunk.Value))
 	}
 
-	chunkedFile := chunker.NewChunkedFile(key, parts)
-	return f.chunker.Assemble(chunkedFile), nil
+	chunkedFile := chunker.NewFromChunks(key, parts)
+	return chunkedFile.Assemble(), nil
 }
