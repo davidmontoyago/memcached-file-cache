@@ -20,7 +20,7 @@ var memcachedClient *memcache.Client
 
 func main() {
 	router := mux.NewRouter().StrictSlash(false)
-	router.HandleFunc("/filecache", upload).Methods("PUT")
+	router.HandleFunc("/filecache", upload).Methods("POST")
 	router.HandleFunc("/filecache/{key}", download).Methods("GET")
 
 	memcachedClient = memcache.New(memcachedAddr)
