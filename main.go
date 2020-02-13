@@ -38,14 +38,14 @@ func main() {
 func upload(res http.ResponseWriter, req *http.Request) {
 	file, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+		http.Error(res, toJSONError(err), http.StatusBadRequest)
 		return
 	}
 	fc := filecache.New(memcachedClient)
 	key, err := fc.Put(file)
 	if err != nil {
-		log.Println("failed to put file", err)
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		log.Println("failed to put file:", err)
+		http.Error(res, toJSONError(err), http.StatusBadRequest)
 		return
 	}
 
@@ -60,11 +60,17 @@ func download(res http.ResponseWriter, req *http.Request) {
 	fc := filecache.New(memcachedClient)
 	file, err := fc.Get(fileKey)
 	if err != nil {
-		log.Println("failed to get file", err)
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		log.Println("failed to get file:", err)
+		http.Error(res, toJSONError(err), http.StatusNotFound)
 		return
 	}
 
 	http.ServeContent(res, req, fmt.Sprintf("%s.dat", fileKey), time.Now(), bytes.NewReader(file))
 	log.Printf("success! downloaded file %s\n", fileKey)
+}
+
+func toJSONError(err error) string {
+	errorResponse := new(bytes.Buffer)
+	json.NewEncoder(errorResponse).Encode(map[string]string{"ok": "false", "error": err.Error()})
+	return errorResponse.String()
 }

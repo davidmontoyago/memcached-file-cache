@@ -2,6 +2,7 @@ package filecache
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -73,7 +74,10 @@ func TestGetFetchesChunksAndAssemblesFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fileCache.Put(file)
+	_, err = fileCache.Put(file)
+	if err != nil {
+		t.Error(err)
+	}
 
 	assembledFile, err := fileCache.Get("91388263e7c545ebea3952fb2637dffa")
 	if err != nil {
@@ -81,5 +85,18 @@ func TestGetFetchesChunksAndAssemblesFile(t *testing.T) {
 	}
 	if !bytes.Equal(file, assembledFile) {
 		t.Errorf("expected assembled file to contain same bytes as fixture but they differ")
+	}
+}
+
+func TestPutRejectsFilesGreaterThan50MB(t *testing.T) {
+	bigFile := make([]byte, MaxFileSize+1)
+	rand.Read(bigFile)
+
+	memcached := &mockMemcachedClient{storedItems: make(map[string][]byte)}
+	fileCache := New(memcached)
+
+	_, err := fileCache.Put(bigFile)
+	if err == nil {
+		t.Error("expected error but got nil")
 	}
 }

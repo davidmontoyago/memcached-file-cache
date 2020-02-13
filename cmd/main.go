@@ -41,7 +41,10 @@ func main() {
 			Action: download,
 		},
 	}
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 
 func upload(c *cli.Context) error {
