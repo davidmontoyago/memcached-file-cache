@@ -35,18 +35,11 @@ func (f *FileCache) Put(file []byte) error {
 	}
 	keys := strings.TrimSuffix(sb.String(), ",")
 
-	// store file unique id and comma separated list of all its chunks' ids
-	fileKeys := &memcache.Item{Key: chunkedFile.Checksum(), Value: []byte(keys)}
-	if err := f.memcache.Set(fileKeys); err != nil {
+	if err := f.putFileKeys(chunkedFile.Checksum(), keys); err != nil {
 		return err
 	}
-
-	// store file chunks
-	for key, chunk := range fileChunksByKey {
-		chunkItem := &memcache.Item{Key: key, Value: chunk.Bytes()}
-		if err := f.memcache.Set(chunkItem); err != nil {
-			return err
-		}
+	if err := f.putFileChunks(fileChunksByKey); err != nil {
+		return err
 	}
 	return nil
 }
@@ -70,4 +63,24 @@ func (f *FileCache) Get(key string) ([]byte, error) {
 
 	chunkedFile := chunker.NewFromChunks(key, parts)
 	return chunkedFile.Assemble(), nil
+}
+
+// store file unique id and comma separated list of all its chunks' ids
+func (f *FileCache) putFileKeys(fileKey string, chunksKeys string) error {
+	fileKeys := &memcache.Item{Key: fileKey, Value: []byte(chunksKeys)}
+	if err := f.memcache.Set(fileKeys); err != nil {
+		return err
+	}
+	return nil
+}
+
+// store file chunks
+func (f *FileCache) putFileChunks(fileChunksByKey map[string]*chunker.Chunk) error {
+	for key, chunk := range fileChunksByKey {
+		chunkItem := &memcache.Item{Key: key, Value: chunk.Bytes()}
+		if err := f.memcache.Set(chunkItem); err != nil {
+			return err
+		}
+	}
+	return nil
 }
