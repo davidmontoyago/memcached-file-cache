@@ -66,7 +66,7 @@ func assemble(chunks []*Chunk) []byte {
 func (c *ChunkedFile) split() {
 	var parts []*Chunk
 
-	chunkSizer := newSkewedChunkSizer()
+	chunkSizer := newCumulativeChunkSizer()
 	var offset int
 	for offset < len(c.file) {
 		chunkSize := nextChunkSize(len(c.file), offset, chunkSizer)
