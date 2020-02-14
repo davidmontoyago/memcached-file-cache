@@ -20,6 +20,39 @@ type ChunkSizer interface {
 	NextChunkSize() int
 }
 
+// --------------------------- SKEWED distribution chunk sizer ---------------------------
+type skewedChunkSizer struct {
+	randSource xrand.Source
+	random     *xrand.Rand
+}
+
+func newSkewedChunkSizer() ChunkSizer {
+	randomSource := xrand.NewSource(uint64(time.Now().UnixNano()))
+	return &skewedChunkSizer{
+		randSource: randomSource,
+		random:     xrand.New(randomSource),
+	}
+}
+
+func (c *skewedChunkSizer) NextChunkSize() int {
+	// 80% of the time, fall in the lower range 96 to 246KB
+	// 20% of the time, fall in the higher range > 246KB
+	frequenceRatio := (float64(20) / float64(80))
+	skew := c.random.Float64()
+
+	var chunkSize int
+	if skew > frequenceRatio {
+		chunkSize = randomInRange(minChunkSize, 251904-1, c.random)
+	} else {
+		chunkSize = randomInRange(251904, maxChunkSize, c.random)
+	}
+	return chunkSize
+}
+
+func randomInRange(min, max int, random *xrand.Rand) int {
+	return random.Intn(max - min + 1)
+}
+
 // --------------------------- UNIFORM distribution chunk sizer ---------------------------
 type uniformChunkSizer struct {
 	dist       *distmv.Uniform
